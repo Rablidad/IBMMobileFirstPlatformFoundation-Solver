@@ -95,7 +95,7 @@ func app_login(proxy string, cpf string, timeout int) (bool, error) {
 	client := resty.New().
 		// disable redirect
 		SetRedirectPolicy(resty.NoRedirectPolicy()).
-		SetBaseURL("https://app.cartoes.mobilidade.app.gov.br/mfpcar/api/").
+		SetBaseURL("https://<DOMAIN>/mfpcar/api/").
 		SetCookieJar(jar).
 		SetHeader("User-Agent", userAgent).
 		SetProxy("http://" + proxy).
@@ -145,7 +145,7 @@ func app_login(proxy string, cpf string, timeout int) (bool, error) {
 	// step 2 - post self with challenge
 	res, err = client.
 		SetHeaders(map[string]string{
-			"x-mfp-analytics-metadata":   fmt.Sprintf("{\"os\":\"ios\",\"mfpAppVersion\":\"<AppVersion>\",\"appVersionCode\":\"3.0\",\"osVersion\":\"16.7.8\",\"deviceID\":\"%s\",\"model\":\"iPhone10,5\",\"appStoreLabel\":\"<AppLabel>\",\"brand\":\"Apple\",\"appVersionDisplay\":\"<AppVersion>\",\"mfpAppName\":\"br.gov.app.cartoes.credito\",\"appStoreId\":\"br.gov.app.cartoes.credito\"}", device_id),
+			"x-mfp-analytics-metadata":   fmt.Sprintf("{\"os\":\"ios\",\"mfpAppVersion\":\"<AppVersion>\",\"appVersionCode\":\"3.0\",\"osVersion\":\"16.7.8\",\"deviceID\":\"%s\",\"model\":\"iPhone10,5\",\"appStoreLabel\":\"<AppLabel>\",\"brand\":\"Apple\",\"appVersionDisplay\":\"<AppVersion>\",\"mfpAppName\":\"<AppPackageName>\",\"appStoreId\":\"<AppPackageName>\"}", device_id),
 			"Content-Type":               "application/json",
 			"x-requested-with":           "XMLHttpRequest",
 			"x-wl-analytics-tracking-id": strings.ToUpper(uuid.New().String()),
@@ -306,7 +306,7 @@ func app_login(proxy string, cpf string, timeout int) (bool, error) {
 			},
 			"nuTipoCanal": 1,
 		}).
-		Post("adapters/appCartoes_contratacao_6_2_2/contratacao/v5/")
+		Post("adapters/<AppName>_<AppVersion>/contratacao/v5/")
 
 	if err != nil {
 		return false, err
@@ -332,7 +332,6 @@ func app_login(proxy string, cpf string, timeout int) (bool, error) {
 func main() {
 	var wg sync.WaitGroup
 	kong.Parse(&CLI)
-	println("[*] Mode: App Cartoes")
 	fmt.Printf("[*] Nº of Threads: %d\n", CLI.Threads)
 	match, _ := regexp.MatchString("^([A-Za-z\\d-_]+:[A-Za-z\\d-_]+@)?(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z]|[A-Za-z][A-Za-z0-9\\-]*[A-Za-z0-9]):\\d{1,5}$", CLI.Proxy)
 	if !match {
@@ -386,10 +385,10 @@ func main() {
 		go func(mu *sync.Mutex, lines []string, proxy string, retries int, timeout int) {
 			defer wg.Done()
 
-			apiFile, _ := os.OpenFile(DATA_DIR+"/cpfs_sucesso.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+			apiFile, _ := os.OpenFile(DATA_DIR+"/success.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
 			defer apiFile.Close()
 
-			exceptFile, _ := os.OpenFile(DATA_DIR+"/cpfs_error.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+			exceptFile, _ := os.OpenFile(DATA_DIR+"/errors.txt", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
 			defer exceptFile.Close()
 
 			for _, line := range lines {
